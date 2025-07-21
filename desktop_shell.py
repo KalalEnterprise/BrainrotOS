@@ -147,6 +147,12 @@ class TaskBar(QFrame):
         layout = QHBoxLayout()
         layout.setContentsMargins(10, 5, 10, 5)
         
+        # Quick Launch area (like Vista)
+        quick_launch = QWidget()
+        quick_launch_layout = QHBoxLayout()
+        quick_launch_layout.setContentsMargins(5, 5, 5, 5)
+        quick_launch_layout.setSpacing(3)
+        
         # Start button (Brainrot menu) with Vista orb style
         self.start_btn = QPushButton("🧠")
         self.start_btn.setFixedSize(50, 50)
@@ -178,6 +184,50 @@ class TaskBar(QFrame):
                     stop:1 rgba(100, 0, 200, 180));
             }
         """)
+        
+        # Quick Launch icons (like Vista)
+        quick_launch_icons = [
+            ("🌐", "Internet Explorer"),
+            ("📁", "File Explorer"),
+            ("🎵", "Media Player"),
+            ("📝", "Notepad"),
+            ("🎮", "Games")
+        ]
+        
+        for icon, tooltip in quick_launch_icons:
+            btn = QPushButton(icon)
+            btn.setFixedSize(32, 32)
+            btn.setToolTip(tooltip)
+            btn.setStyleSheet("""
+                QPushButton {
+                    background: rgba(255, 255, 255, 30);
+                    border: 1px solid rgba(255, 255, 255, 50);
+                    border-radius: 4px;
+                    font-size: 16px;
+                }
+                QPushButton:hover {
+                    background: rgba(255, 255, 255, 60);
+                    border: 1px solid rgba(255, 255, 255, 100);
+                }
+                QPushButton:pressed {
+                    background: rgba(255, 255, 255, 80);
+                }
+            """)
+            quick_launch_layout.addWidget(btn)
+            
+        quick_launch.setLayout(quick_launch_layout)
+        
+        # Running applications area
+        self.running_apps = QWidget()
+        self.running_apps_layout = QHBoxLayout()
+        self.running_apps_layout.setContentsMargins(5, 5, 5, 5)
+        self.running_apps_layout.setSpacing(2)
+        self.running_apps.setLayout(self.running_apps_layout)
+        
+        # Add some default "running" apps
+        self.add_running_app("🧠 BrainrotOS", True)
+        self.add_running_app("📷 Gyatt Cam", False)
+        self.add_running_app("🔊 Meme Player", False)
         
         # Add glow animation to start button
         self.start_glow_timer = QTimer()
@@ -243,6 +293,25 @@ class TaskBar(QFrame):
         self.tray_timer.start(3000)
         
         layout.addWidget(self.start_btn)
+        
+        # Add separator
+        separator1 = QWidget()
+        separator1.setFixedWidth(2)
+        separator1.setStyleSheet("background: rgba(255, 255, 255, 30);")
+        layout.addWidget(separator1)
+        
+        # Add quick launch
+        layout.addWidget(quick_launch)
+        
+        # Add separator
+        separator2 = QWidget()
+        separator2.setFixedWidth(2)
+        separator2.setStyleSheet("background: rgba(255, 255, 255, 30);")
+        layout.addWidget(separator2)
+        
+        # Add running apps
+        layout.addWidget(self.running_apps)
+        
         layout.addStretch()
         layout.addWidget(self.vibe_label)
         layout.addWidget(self.system_tray)
@@ -264,6 +333,47 @@ class TaskBar(QFrame):
         icons = ["🔊 📶 🔋", "🔇 📶 🔋", "🔊 📵 🔋", "🔊 📶 🪫", "🔊 📶 ⚡"]
         self.system_tray.setText(random.choice(icons))
         
+    def add_running_app(self, name, is_active=False):
+        """Add a running application to the taskbar"""
+        app_btn = QPushButton(name)
+        app_btn.setFixedSize(120, 32)
+        
+        if is_active:
+            app_btn.setStyleSheet("""
+                QPushButton {
+                    background: rgba(255, 255, 255, 60);
+                    border: 2px solid rgba(255, 255, 255, 100);
+                    border-radius: 4px;
+                    color: white;
+                    font-size: 10px;
+                    font-weight: bold;
+                    text-align: left;
+                    padding-left: 5px;
+                }
+                QPushButton:hover {
+                    background: rgba(255, 255, 255, 80);
+                }
+            """)
+        else:
+            app_btn.setStyleSheet("""
+                QPushButton {
+                    background: rgba(255, 255, 255, 20);
+                    border: 1px solid rgba(255, 255, 255, 40);
+                    border-radius: 4px;
+                    color: rgba(255, 255, 255, 180);
+                    font-size: 10px;
+                    text-align: left;
+                    padding-left: 5px;
+                }
+                QPushButton:hover {
+                    background: rgba(255, 255, 255, 40);
+                    color: white;
+                }
+            """)
+        
+        self.running_apps_layout.addWidget(app_btn)
+        return app_btn
+    
     def update_clock(self):
         now = datetime.datetime.now()
         time_str = now.strftime("%H:%M:%S")
@@ -273,6 +383,343 @@ class TaskBar(QFrame):
         if random.randint(1, 30) == 1:  # 1/30 chance each second
             vibes = ["💯", "🔥", "💀", "😭", "🤡", "👑", "💎", "⚡", "🌟", "🚀"]
             self.vibe_label.setText(f"Vibe Level: {random.choice(vibes)}")
+
+class EnhancedWeatherWidget(QWidget):
+    """Enhanced weather widget with live updates"""
+    def __init__(self):
+        super().__init__()
+        self.setFixedSize(200, 150)
+        self.setup_ui()
+        self.setup_timer()
+        
+    def setup_ui(self):
+        self.shadow_effect = QGraphicsDropShadowEffect()
+        self.shadow_effect.setBlurRadius(15)
+        self.shadow_effect.setColor(QColor(0, 0, 0, 100))
+        self.shadow_effect.setOffset(2, 2)
+        self.setGraphicsEffect(self.shadow_effect)
+        
+        layout = QVBoxLayout()
+        
+        # Title bar
+        title_label = QLabel("🌤️ Weather")
+        title_label.setStyleSheet("""
+            QLabel {
+                background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                    stop:0 rgba(255, 255, 255, 100),
+                    stop:1 rgba(200, 200, 255, 80));
+                color: black;
+                font-size: 12px;
+                font-weight: bold;
+                font-family: 'Segoe UI';
+                padding: 8px;
+                border-top-left-radius: 8px;
+                border-top-right-radius: 8px;
+                border: 1px solid rgba(255, 255, 255, 120);
+            }
+        """)
+        
+        # Content area
+        self.content_label = QLabel()
+        self.content_label.setWordWrap(True)
+        self.content_label.setStyleSheet("""
+            QLabel {
+                background: rgba(255, 255, 255, 40);
+                color: white;
+                font-size: 10px;
+                font-family: 'Segoe UI';
+                padding: 10px;
+                border-bottom-left-radius: 8px;
+                border-bottom-right-radius: 8px;
+                border: 1px solid rgba(255, 255, 255, 60);
+                border-top: none;
+                text-shadow: 1px 1px 2px rgba(0, 0, 0, 100);
+            }
+        """)
+        
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(0)
+        layout.addWidget(title_label)
+        layout.addWidget(self.content_label)
+        self.setLayout(layout)
+        self.update_weather()
+        
+    def setup_timer(self):
+        self.timer = QTimer()
+        self.timer.timeout.connect(self.update_weather)
+        self.timer.start(10000)  # Update every 10 seconds
+        
+    def update_weather(self):
+        conditions = ["Sunny", "Cloudy", "Rainy", "Snowy", "Foggy", "Windy"]
+        temps = ["15°C", "20°C", "25°C", "30°C", "35°C"]
+        humidity = ["30%", "45%", "60%", "75%", "90%"]
+        
+        condition = random.choice(conditions)
+        temp = random.choice(temps)
+        hum = random.choice(humidity)
+        
+        self.content_label.setText(f"Currently: {condition}\nTemp: {temp}\nHumidity: {hum}\nWind: 5 mph")
+
+class EnhancedCalendarWidget(QWidget):
+    """Enhanced calendar widget with events"""
+    def __init__(self):
+        super().__init__()
+        self.setFixedSize(200, 150)
+        self.setup_ui()
+        
+    def setup_ui(self):
+        self.shadow_effect = QGraphicsDropShadowEffect()
+        self.shadow_effect.setBlurRadius(15)
+        self.shadow_effect.setColor(QColor(0, 0, 0, 100))
+        self.shadow_effect.setOffset(2, 2)
+        self.setGraphicsEffect(self.shadow_effect)
+        
+        layout = QVBoxLayout()
+        
+        title_label = QLabel("📅 Calendar")
+        title_label.setStyleSheet("""
+            QLabel {
+                background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                    stop:0 rgba(255, 255, 255, 100),
+                    stop:1 rgba(200, 200, 255, 80));
+                color: black;
+                font-size: 12px;
+                font-weight: bold;
+                font-family: 'Segoe UI';
+                padding: 8px;
+                border-top-left-radius: 8px;
+                border-top-right-radius: 8px;
+                border: 1px solid rgba(255, 255, 255, 120);
+            }
+        """)
+        
+        now = datetime.datetime.now()
+        content = f"Today: {now.strftime('%B %d')}\nEvents:\n• Rizz meeting @ 3PM\n• Vibe check @ 5PM\n• Touch grass (pending)"
+        
+        content_label = QLabel(content)
+        content_label.setWordWrap(True)
+        content_label.setStyleSheet("""
+            QLabel {
+                background: rgba(255, 255, 255, 40);
+                color: white;
+                font-size: 10px;
+                font-family: 'Segoe UI';
+                padding: 10px;
+                border-bottom-left-radius: 8px;
+                border-bottom-right-radius: 8px;
+                border: 1px solid rgba(255, 255, 255, 60);
+                border-top: none;
+                text-shadow: 1px 1px 2px rgba(0, 0, 0, 100);
+            }
+        """)
+        
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(0)
+        layout.addWidget(title_label)
+        layout.addWidget(content_label)
+        self.setLayout(layout)
+
+class EnhancedSystemWidget(QWidget):
+    """Enhanced system monitor widget"""
+    def __init__(self):
+        super().__init__()
+        self.setFixedSize(200, 150)
+        self.setup_ui()
+        self.setup_timer()
+        
+    def setup_ui(self):
+        self.shadow_effect = QGraphicsDropShadowEffect()
+        self.shadow_effect.setBlurRadius(15)
+        self.shadow_effect.setColor(QColor(0, 0, 0, 100))
+        self.shadow_effect.setOffset(2, 2)
+        self.setGraphicsEffect(self.shadow_effect)
+        
+        layout = QVBoxLayout()
+        
+        title_label = QLabel("💻 System")
+        title_label.setStyleSheet("""
+            QLabel {
+                background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                    stop:0 rgba(255, 255, 255, 100),
+                    stop:1 rgba(200, 200, 255, 80));
+                color: black;
+                font-size: 12px;
+                font-weight: bold;
+                font-family: 'Segoe UI';
+                padding: 8px;
+                border-top-left-radius: 8px;
+                border-top-right-radius: 8px;
+                border: 1px solid rgba(255, 255, 255, 120);
+            }
+        """)
+        
+        self.content_label = QLabel()
+        self.content_label.setWordWrap(True)
+        self.content_label.setStyleSheet("""
+            QLabel {
+                background: rgba(255, 255, 255, 40);
+                color: white;
+                font-size: 10px;
+                font-family: 'Segoe UI';
+                padding: 10px;
+                border-bottom-left-radius: 8px;
+                border-bottom-right-radius: 8px;
+                border: 1px solid rgba(255, 255, 255, 60);
+                border-top: none;
+                text-shadow: 1px 1px 2px rgba(0, 0, 0, 100);
+            }
+        """)
+        
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(0)
+        layout.addWidget(title_label)
+        layout.addWidget(self.content_label)
+        self.setLayout(layout)
+        self.update_stats()
+        
+    def setup_timer(self):
+        self.timer = QTimer()
+        self.timer.timeout.connect(self.update_stats)
+        self.timer.start(2000)  # Update every 2 seconds
+        
+    def update_stats(self):
+        cpu = random.randint(10, 95)
+        ram = random.randint(2, 8)
+        disk = random.randint(100, 500)
+        
+        self.content_label.setText(f"CPU: {cpu}%\nRAM: {ram}GB used\nDisk: {disk}GB free\nVibes: Maximum")
+
+class EnhancedMusicWidget(QWidget):
+    """Enhanced music player widget"""
+    def __init__(self):
+        super().__init__()
+        self.setFixedSize(200, 150)
+        self.setup_ui()
+        self.setup_timer()
+        
+    def setup_ui(self):
+        self.shadow_effect = QGraphicsDropShadowEffect()
+        self.shadow_effect.setBlurRadius(15)
+        self.shadow_effect.setColor(QColor(0, 0, 0, 100))
+        self.shadow_effect.setOffset(2, 2)
+        self.setGraphicsEffect(self.shadow_effect)
+        
+        layout = QVBoxLayout()
+        
+        title_label = QLabel("🎵 Now Playing")
+        title_label.setStyleSheet("""
+            QLabel {
+                background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                    stop:0 rgba(255, 255, 255, 100),
+                    stop:1 rgba(200, 200, 255, 80));
+                color: black;
+                font-size: 12px;
+                font-weight: bold;
+                font-family: 'Segoe UI';
+                padding: 8px;
+                border-top-left-radius: 8px;
+                border-top-right-radius: 8px;
+                border: 1px solid rgba(255, 255, 255, 120);
+            }
+        """)
+        
+        self.content_label = QLabel()
+        self.content_label.setWordWrap(True)
+        self.content_label.setStyleSheet("""
+            QLabel {
+                background: rgba(255, 255, 255, 40);
+                color: white;
+                font-size: 10px;
+                font-family: 'Segoe UI';
+                padding: 10px;
+                border-bottom-left-radius: 8px;
+                border-bottom-right-radius: 8px;
+                border: 1px solid rgba(255, 255, 255, 60);
+                border-top: none;
+                text-shadow: 1px 1px 2px rgba(0, 0, 0, 100);
+            }
+        """)
+        
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(0)
+        layout.addWidget(title_label)
+        layout.addWidget(self.content_label)
+        self.setLayout(layout)
+        self.update_track()
+        
+    def setup_timer(self):
+        self.timer = QTimer()
+        self.timer.timeout.connect(self.update_track)
+        self.timer.start(15000)  # Change track every 15 seconds
+        
+    def update_track(self):
+        tracks = [
+            ("Skibidi Bop", "DJ Gyatt", "Ohio Hits"),
+            ("Rizz Anthem", "Gen Alpha", "Brainrot Vol. 1"),
+            ("Sigma Grindset", "Chad Music", "Based Beats"),
+            ("No Cap", "Zoomer Collective", "TikTok Bangers")
+        ]
+        
+        track, artist, album = random.choice(tracks)
+        self.content_label.setText(f"Track: {track}\nArtist: {artist}\nAlbum: {album}\nVolume: 💯")
+
+class EnhancedNotesWidget(QWidget):
+    """Enhanced notes widget"""
+    def __init__(self):
+        super().__init__()
+        self.setFixedSize(200, 150)
+        self.setup_ui()
+        
+    def setup_ui(self):
+        self.shadow_effect = QGraphicsDropShadowEffect()
+        self.shadow_effect.setBlurRadius(15)
+        self.shadow_effect.setColor(QColor(0, 0, 0, 100))
+        self.shadow_effect.setOffset(2, 2)
+        self.setGraphicsEffect(self.shadow_effect)
+        
+        layout = QVBoxLayout()
+        
+        title_label = QLabel("📝 Quick Notes")
+        title_label.setStyleSheet("""
+            QLabel {
+                background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                    stop:0 rgba(255, 255, 255, 100),
+                    stop:1 rgba(200, 200, 255, 80));
+                color: black;
+                font-size: 12px;
+                font-weight: bold;
+                font-family: 'Segoe UI';
+                padding: 8px;
+                border-top-left-radius: 8px;
+                border-top-right-radius: 8px;
+                border: 1px solid rgba(255, 255, 255, 120);
+            }
+        """)
+        
+        content = "• Touch grass (postponed)\n• Learn new rizz lines\n• Update vibe check\n• Stream on Twitch\n• Buy more RGB"
+        
+        content_label = QLabel(content)
+        content_label.setWordWrap(True)
+        content_label.setStyleSheet("""
+            QLabel {
+                background: rgba(255, 255, 255, 40);
+                color: white;
+                font-size: 10px;
+                font-family: 'Segoe UI';
+                padding: 10px;
+                border-bottom-left-radius: 8px;
+                border-bottom-right-radius: 8px;
+                border: 1px solid rgba(255, 255, 255, 60);
+                border-top: none;
+                text-shadow: 1px 1px 2px rgba(0, 0, 0, 100);
+            }
+        """)
+        
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(0)
+        layout.addWidget(title_label)
+        layout.addWidget(content_label)
+        self.setLayout(layout)
 
 class VistaWidget(QWidget):
     """Vista-style sidebar widget"""
@@ -408,12 +855,13 @@ class BrainrotDesktop(QMainWindow):
         layout.setContentsMargins(10, 20, 10, 20)
         layout.setSpacing(15)
         
-        # Vista widgets
+        # Create enhanced sidebar widgets with real functionality
         widgets = [
-            VistaWidget("🌡️ Weather", "Currently: Brainrot\nTemp: 69°F\nHumidity: 420%\nWind: Sus mph"),
-            VistaWidget("📅 Calendar", "Today: Skibidi Day\nEvents:\n• Touch grass (skipped)\n• Rizz meeting @ 3PM\n• Vibe check @ 5PM"),
-            VistaWidget("📊 System Stats", "CPU: 100% (thinking)\nRAM: 8GB (mostly memes)\nDisk: 420GB free\nVibes: Maximum"),
-            VistaWidget("🎵 Now Playing", "Track: Skibidi Toilet\nArtist: Gen Z Collective\nAlbum: Brainrot Hits\nVolume: Too loud"),
+            EnhancedWeatherWidget(),
+            EnhancedCalendarWidget(), 
+            EnhancedSystemWidget(),
+            EnhancedMusicWidget(),
+            EnhancedNotesWidget()
         ]
         
         for widget in widgets:
@@ -558,8 +1006,11 @@ class BrainrotDesktop(QMainWindow):
         self.show_placeholder("Sigma Notes", "📝 Write your sigma thoughts here")
         
     def open_camera(self):
-        # Placeholder for camera
-        self.show_placeholder("Gyatt Cam", "📷 Camera.exe has stopped working (skill issue)")
+        if "camera" not in self.app_windows:
+            from apps.gyatt_cam import GyattCam
+            self.app_windows["camera"] = GyattCam()
+        self.app_windows["camera"].show()
+        self.app_windows["camera"].raise_()
         
     def touch_grass(self):
         # Easter egg
